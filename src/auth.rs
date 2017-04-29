@@ -4,13 +4,19 @@ use rocket::{State};
 use rocket::http::{Cookies};
 use user::{User};
 use uuid::{Uuid};
+use std::str::FromStr;
 
-
-pub fn is_authenticated(cookies: &Cookies) -> bool {
-  match cookies.find("session") {
-    Some(_) => true,
-    None => false
-  }
+pub fn is_authenticated(cookies: &Cookies, state: State<AppState>) -> bool {
+  cookies
+    .find("session")
+    .and_then(|cookie| Uuid::from_str(cookie.value()).ok())
+    .and_then(|uuid| {
+      match state.users.lock().unwrap().contains_key(&uuid) {
+        true => Some(true),
+        false => None
+      }
+    })
+    .unwrap_or(false)
 }
 
 pub fn save_user(state: State<AppState>, token: T411Token) -> User {

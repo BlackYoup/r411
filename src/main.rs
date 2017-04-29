@@ -41,8 +41,8 @@ impl AppState {
 }
 
 #[get("/")]
-fn index(cookies: &Cookies) -> Result<&'static str, Redirect> {
-  if !auth::is_authenticated(&cookies){
+fn index(cookies: &Cookies, state: State<AppState>) -> Result<&'static str, Redirect> {
+  if !auth::is_authenticated(&cookies, state){
     return Err(Redirect::to("/login"));
   } else {
     return Ok("Hello world!");
