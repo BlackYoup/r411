@@ -13,9 +13,11 @@ extern crate uuid;
 
 mod auth;
 mod t411;
+mod user;
 
 use t411::auth::{Login};
 use t411::api::{T411Token};
+use user::{User,Users};
 
 use rocket::{State};
 use rocket::http::{Cookie,Cookies};
@@ -26,25 +28,8 @@ use std::collections::HashMap;
 use std::sync::{Mutex};
 use uuid::{Uuid};
 
-type Users = Mutex<HashMap<Uuid, User>>;
-
 #[derive(Debug)]
-struct User{
-  uuid: Uuid,
-  token: T411Token
-}
-
-impl User {
-  pub fn new(uuid: Uuid, token: T411Token) -> Self {
-    User {
-      token,
-      uuid
-    }
-  }
-}
-
-#[derive(Debug)]
-struct AppState{
+pub struct AppState{
   pub users: Users
 }
 
@@ -77,14 +62,8 @@ fn post_login(mut cookies: &Cookies, login: Form<Login>, state: State<AppState>)
 
   match t411::auth::authenticate(&credentials) {
     Ok(token) => {
-      let uuid = Uuid::new_v4();
-      let user = User::new(uuid, token.token);
-      let mut users = state.users.lock().unwrap();
-
-      users.insert(uuid, user);
-
-      cookies.add(Cookie::new("session", uuid.to_string()));
-
+      let user = auth::save_user(state, token.token);
+      cookies.add(Cookie::new("session", user.uuid.to_string()));
       Ok(Redirect::to("/"))
     },
     Err(err) => {
