@@ -7,10 +7,10 @@ use uuid::{Uuid};
 
 
 pub fn is_authenticated(cookies: &Cookies) -> bool {
-    match cookies.find("session") {
-        Some(_) => true,
-        None => false
-    }
+  match cookies.find("session") {
+    Some(_) => true,
+    None => false
+  }
 }
 
 pub fn save_user(state: State<AppState>, token: T411Token) -> User {
