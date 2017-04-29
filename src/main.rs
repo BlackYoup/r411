@@ -16,7 +16,6 @@ mod t411;
 mod user;
 
 use t411::auth::{Login};
-use t411::api::{T411Token};
 use user::{User,Users};
 
 use rocket::{State};
@@ -57,7 +56,7 @@ fn login() -> Template {
 }
 
 #[post("/login", data = "<login>")]
-fn post_login(mut cookies: &Cookies, login: Form<Login>, state: State<AppState>) -> Result<Redirect, Template> {
+fn post_login(cookies: &Cookies, login: Form<Login>, state: State<AppState>) -> Result<Redirect, Template> {
   let credentials = login.get();
 
   match t411::auth::authenticate(&credentials) {
@@ -66,7 +65,7 @@ fn post_login(mut cookies: &Cookies, login: Form<Login>, state: State<AppState>)
       cookies.add(Cookie::new("session", user.uuid.to_string()));
       Ok(Redirect::to("/"))
     },
-    Err(err) => {
+    Err(_) => {
       let context: HashMap<String, String> = HashMap::new();
       Err(Template::render("login", &context))
     }
