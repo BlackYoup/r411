@@ -51,7 +51,8 @@ fn index(cookies: &Cookies, state: State<AppState>) -> Result<&'static str, Redi
 
 #[get("/login")]
 fn login() -> Template {
-  let context: HashMap<String, String> = HashMap::new();
+  let mut context = HashMap::new();
+  context.insert("title", "Login");
   Template::render("login", &context)
 }
 
@@ -66,7 +67,9 @@ fn post_login(cookies: &Cookies, login: Form<Login>, state: State<AppState>) -> 
       Ok(Redirect::to("/"))
     },
     Err(_) => {
-      let context: HashMap<String, String> = HashMap::new();
+      let mut context = HashMap::new();
+      context.insert("title", "Login");
+
       Err(Template::render("login", &context))
     }
   }
