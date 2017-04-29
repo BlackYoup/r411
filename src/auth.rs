@@ -6,7 +6,16 @@ use user::{User};
 use uuid::{Uuid};
 use std::str::FromStr;
 
-pub fn is_authenticated(cookies: &Cookies, state: State<AppState>) -> bool {
+pub fn authenticate(cookies: &Cookies, state: State<AppState>) -> bool {
+  let authenticated = is_authenticated(cookies, state);
+  if !authenticated && cookies.find("session").is_some() {
+    cookies.remove("session");
+  }
+
+  authenticated
+}
+
+fn is_authenticated(cookies: &Cookies, state: State<AppState>) -> bool {
   cookies
     .find("session")
     .and_then(|cookie| Uuid::from_str(cookie.value()).ok())
