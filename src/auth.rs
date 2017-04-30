@@ -7,20 +7,25 @@ use uuid::{Uuid};
 use std::str::FromStr;
 use std::env;
 
-pub fn authenticate(cookies: &Cookies, state: State<AppState>) -> bool {
+pub fn authenticate(cookies: &Cookies, state: State<AppState>) -> Option<User> {
   if env::var("BYPASS_LOGIN").is_ok() {
-    return true;
+    save_user(String::new(), &state);
+    return get_user(cookies, &state);
   }
 
-  let authenticated = is_authenticated(cookies, state);
-  if !authenticated && cookies.find("session").is_some() {
-    cookies.remove("session");
-  }
+  let authenticated = is_authenticated(cookies, &state);
+  if !authenticated {
+    if cookies.find("session").is_some() {
+      cookies.remove("session");
+    }
 
-  authenticated
+    return None;
+  } else {
+    return get_user(cookies, &state);
+  }
 }
 
-fn is_authenticated(cookies: &Cookies, state: State<AppState>) -> bool {
+fn is_authenticated(cookies: &Cookies, state: &State<AppState>) -> bool {
   cookies
     .find("session")
     .and_then(|cookie| Uuid::from_str(cookie.value()).ok())
@@ -33,7 +38,7 @@ fn is_authenticated(cookies: &Cookies, state: State<AppState>) -> bool {
     .unwrap_or(false)
 }
 
-pub fn save_user(state: State<AppState>, token: T411Token) -> User {
+pub fn save_user(token: T411Token, state: &State<AppState>) -> User {
   let uuid;
   let user;
   if env::var("BYPASS_LOGIN").is_ok() {
@@ -49,4 +54,11 @@ pub fn save_user(state: State<AppState>, token: T411Token) -> User {
   users.insert(uuid, user.clone());
 
   user
+}
+
+pub fn get_user(cookies: &Cookies, state: &State<AppState>) -> Option<User> {
+  cookies
+    .find("session")
+    .and_then(|cookie| Uuid::from_str(cookie.value()).ok())
+    .and_then(|uuid| state.users.lock().unwrap().get(&uuid).cloned())
 }

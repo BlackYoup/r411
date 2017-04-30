@@ -58,8 +58,6 @@ pub fn call(route: &str, method: Method, token: Option<T411Token>, data: Option<
   // TODO: handle the 0 case
   let _ = res.read_to_string(&mut buff).expect("call: couldn't read_to_string response");
 
-  println!("Return code: {:?}", res.status);
-
   if res.status >= StatusCode::Ok && res.status < StatusCode::BadRequest {
     return match serde_json::from_str(&buff) {
       Ok(error) => Err(error),

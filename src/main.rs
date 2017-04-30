@@ -12,11 +12,14 @@ extern crate serde_json;
 extern crate uuid;
 
 mod auth;
+mod search;
 mod t411;
+mod torrent;
 mod user;
 
 use t411::auth::{Login};
 use user::{User,Users};
+use search::{SearchResults};
 
 use rocket::{State};
 use rocket::http::{Cookie,Cookies};
@@ -41,12 +44,17 @@ impl AppState {
 }
 
 #[get("/")]
-fn index(cookies: &Cookies, state: State<AppState>) -> Result<&'static str, Redirect> {
-  if !auth::authenticate(&cookies, state){
+fn index(cookies: &Cookies, state: State<AppState>) -> Result<Template, Redirect> {
+  let user = auth::authenticate(&cookies, state);
+
+  if user.is_none() {
     return Err(Redirect::to("/login"));
-  } else {
-    return Ok("Hello world!");
   }
+
+  let mut context = HashMap::new();
+  context.insert("title", "Index");
+
+  Ok(Template::render("index", &context))
 }
 
 #[get("/login")]
@@ -56,13 +64,27 @@ fn login() -> Template {
   Template::render("login", &context)
 }
 
+#[get("/search?<query>")]
+fn search(query: search::SearchQS, cookies: &Cookies, state: State<AppState>) -> Result<Template, Redirect> {
+  let user = auth::authenticate(&cookies, state);
+
+  if user.is_none() {
+    return Err(Redirect::to("/login"));
+  }
+
+  let search = search::Search::new(query.q, user.unwrap());
+  let results = search.query().expect("Query failed");
+  // TODO: handle query error
+  Ok(Template::render("search", &results))
+}
+
 #[post("/login", data = "<login>")]
 fn post_login(cookies: &Cookies, login: Form<Login>, state: State<AppState>) -> Result<Redirect, Template> {
   let credentials = login.get();
 
   match t411::auth::authenticate(&credentials) {
     Ok(token) => {
-      let user = auth::save_user(state, token.token);
+      let user = auth::save_user(token.token, &state);
       cookies.add(Cookie::new("session", user.uuid.to_string()));
       Ok(Redirect::to("/"))
     },
@@ -77,7 +99,7 @@ fn post_login(cookies: &Cookies, login: Form<Login>, state: State<AppState>) -> 
 
 fn main() {
   rocket::ignite()
-    .mount("/", routes![index, login, post_login])
+    .mount("/", routes![index, login, post_login, search])
     .manage(AppState::new())
     .launch();
 }

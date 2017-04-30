@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+  {{> head }}
+  <body>
+    <div class="container-fluid">
+      <div class="search row">
+        <div class="col-md-6 col-md-offset-2">
+          {{> search_form }}
+        </div>
+      </div>
+
+      <div class="results row">
+        <div class="table-responsive">
+          <table class="table table-hover table-bordered">
+            <thead>
+              <tr>
+                <th>Catégorie</th>
+                <th>Nom</th>
+                <th>Age</th>
+                <th>Taille</th>
+                <th>Complété</th>
+                <th>seeders</th>
+                <th>leachers</th>
+              </tr>
+            </thead>
+            <tbody class="table-stripped">
+              {{#each torrents}}
+                <tr>
+                  <td>{{this.category}}</td>
+                  <td>{{this.name}}</td>
+                  <td>{{this.added}}</td>
+                  <td>{{this.size}}</td>
+                  <td>{{this.times_completed}}</td>
+                  <td>{{this.seeders}}</td>
+                  <td>{{this.leechers}}</td>
+                </tr>
+              {{/each}}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
