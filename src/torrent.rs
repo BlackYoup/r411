@@ -1,6 +1,8 @@
 use search::{SearchTorrent};
+use serde::{Serialize,Serializer,Deserialize,Deserializer,self};
+use serde_json;
 
-#[derive(Debug,Serialize)]
+#[derive(Debug)]
 pub enum Privacy {
   Strong,
   Normal,
@@ -66,6 +68,32 @@ impl From<String> for Privacy {
       "normal" => Privacy::Normal,
       "low" => Privacy::Low,
       _ => unimplemented!()
+    }
+  }
+}
+
+impl Serialize for Privacy {
+  fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where S: Serializer
+  {
+    match *self {
+      Privacy::Strong => serializer.serialize_unit_variant("Privacy", 0, "strong"),
+      Privacy::Normal => serializer.serialize_unit_variant("Privacy", 1, "normal"),
+      Privacy::Low => serializer.serialize_unit_variant("Privacy", 2, "lown")
+    }
+  }
+}
+
+impl Deserialize for Privacy {
+  fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where D: Deserializer
+  {
+    let res: serde_json::Value = try!(serde::Deserialize::deserialize(deserializer));
+    match res {
+      serde_json::Value::String(ref s) if &*s == "strong" => Ok(Privacy::Strong),
+      serde_json::Value::String(ref s) if &*s == "normal" => Ok(Privacy::Normal),
+      serde_json::Value::String(ref s) if &*s == "low" => Ok(Privacy::Low),
+      _ => Err(serde::de::Error::custom("Unexpected Privacy value"))
     }
   }
 }

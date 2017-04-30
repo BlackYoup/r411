@@ -27,7 +27,7 @@
               {{#each torrents}}
                 <tr>
                   <td>{{this.category}}</td>
-                  <td>{{this.name}}</td>
+                  <td><a href="/torrent/{{this.id}}">{{this.name}}</a></td>
                   <td>{{this.added}}</td>
                   <td>{{this.size}}</td>
                   <td>{{this.times_completed}}</td>

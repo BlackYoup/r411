@@ -12,6 +12,7 @@ extern crate serde_json;
 extern crate uuid;
 
 mod auth;
+mod details;
 mod search;
 mod t411;
 mod torrent;
@@ -74,7 +75,7 @@ fn search(query: search::SearchQS, cookies: &Cookies, state: State<AppState>) ->
 
   let search = search::Search::new(query.q, user.unwrap());
   let results = search.query().expect("Query failed");
-  // TODO: handle query error
+  // TODO: handle query error and title
   Ok(Template::render("search", &results))
 }
 
@@ -97,9 +98,23 @@ fn post_login(cookies: &Cookies, login: Form<Login>, state: State<AppState>) -> 
   }
 }
 
+#[get("/torrent/<id>")]
+fn torrent(cookies: &Cookies, id: usize, state: State<AppState>) -> Result<Template, Redirect> {
+  let user = auth::authenticate(&cookies, state);
+
+  if user.is_none() {
+    return Err(Redirect::to("/login"));
+  }
+
+  let torrent = details::DetailedTorrent::get(id, user.unwrap()).expect("Detailed torrent failed");
+
+  // TODO: handle query error and title
+  Ok(Template::render("torrent", &torrent))
+}
+
 fn main() {
   rocket::ignite()
-    .mount("/", routes![index, login, post_login, search])
+    .mount("/", routes![index, login, post_login, search, torrent])
     .manage(AppState::new())
     .launch();
 }
