@@ -23,6 +23,6 @@ impl DetailedTorrent {
   pub fn get(id: usize, user: User) -> Result<DetailedTorrent, T411Error> {
     let res = call(&format!("/torrents/details/{}", id), Method::Get, Some(user.token), None, None);
 
-    res.map(|json| serde_json::from_str(&json).expect("detailed torrent: failed to deserialize"))
+    res.map(|(json, _)| serde_json::from_str(&json).expect("detailed torrent: failed to deserialize"))
   }
 }

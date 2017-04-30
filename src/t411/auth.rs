@@ -22,8 +22,5 @@ pub fn authenticate(credentials: &Login) -> Result<TokenResponse, T411Error> {
 
   let result = call("/auth", Method::Post, None, Some(&body), Some(headers));
 
-  match result {
-    Ok(res) => Ok(serde_json::from_str(&res).expect("authenticate: couldn't deserialize token")),
-    Err(e) => Err(e)
-  }
+  result.map(|(res, _)| serde_json::from_str(&res).expect("authenticate: couldn't deserialize token"))
 }

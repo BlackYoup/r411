@@ -6,6 +6,7 @@ authors = ["BlackYoup"]
 [dependencies]
 hyper = "0.10"
 hyper-native-tls = "0.2"
+mime = "0.2"
 rocket = "0.2"
 rocket_codegen = "0.2"
 serde = "0.9"

@@ -72,7 +72,7 @@ impl Search {
     let res = call(&url, Method::Get, Some(self.user.token.clone()), None, None);
 
     res
-      .map(|ref json| serde_json::from_str(json).expect("search query: failed to deserialize results"))
+      .map(|(ref json, _)| serde_json::from_str(json).expect("search query: failed to deserialize results"))
       .map(|results: T411Results| SearchResults::from(results))
   }
 }

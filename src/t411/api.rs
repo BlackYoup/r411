@@ -1,10 +1,12 @@
 use hyper::client::Client;
-use hyper::header::{Authorization,Headers};
+use hyper::client::response::{Response};
+use hyper::header::{Authorization,ContentType,Headers};
 use hyper::method::Method;
 use hyper::net::{HttpsConnector};
 use hyper_native_tls::{NativeTlsClient};
 use hyper::status::StatusCode;
 use hyper::{Url};
+use mime::{Attr,Mime,SubLevel,TopLevel,Value};
 use serde_json;
 use std::fmt;
 
@@ -28,7 +30,7 @@ impl fmt::Debug for T411Error {
 }
 
 // TODO: return an error etheir matching a T411Error or an std::io::Error (not sure if possible)
-pub fn call(route: &str, method: Method, token: Option<T411Token>, data: Option<&str>, custom_headers: Option<Headers>) -> Result<String, T411Error> {
+pub fn call(route: &str, method: Method, token: Option<T411Token>, data: Option<&str>, custom_headers: Option<Headers>) -> Result<(String, Response), T411Error> {
   let ssl = NativeTlsClient::new().expect("call: couldn't create new NativeTlsClient");
   let connector = HttpsConnector::new(ssl);
   let client = Client::with_connector(connector);
@@ -55,13 +57,26 @@ pub fn call(route: &str, method: Method, token: Option<T411Token>, data: Option<
 
   let mut res = req.send().expect("call: couldn't send request to server");
   let mut buff = String::with_capacity(2048);
+
+  if let Some(content_type) = res.headers.clone().get::<ContentType>() {
+    let t411_mime = ContentType(Mime(
+      TopLevel::Text,
+      SubLevel::Html,
+      vec![(Attr::Charset, Value::Ext("windows-1252".to_owned()))]
+    ));
+
+    if content_type != &t411_mime {
+      return Ok((buff, res));
+    }
+  }
+
   // TODO: handle the 0 case
   let _ = res.read_to_string(&mut buff).expect("call: couldn't read_to_string response");
 
   if res.status >= StatusCode::Ok && res.status < StatusCode::BadRequest {
     return match serde_json::from_str(&buff) {
       Ok(error) => Err(error),
-      Err(_) => Ok(buff)
+      Err(_) => Ok((buff, res))
     };
   } else {
     // TODO: I'm not sur we will ever receive an error of the format we expect here
