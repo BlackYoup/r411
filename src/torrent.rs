@@ -2,6 +2,7 @@ use search::{SearchTorrent};
 
 #[derive(Debug,Serialize)]
 pub enum Privacy {
+  Strong,
   Normal,
   Low
 }
@@ -61,6 +62,7 @@ impl<'a> From<&'a SearchTorrent> for Torrent {
 impl From<String> for Privacy {
   fn from(privacy: String) -> Privacy {
     match privacy.as_ref() {
+      "strong" => Privacy::Strong,
       "normal" => Privacy::Normal,
       "low" => Privacy::Low,
       _ => unimplemented!()
