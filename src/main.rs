@@ -32,10 +32,32 @@ use rocket::http::hyper::header::{Charset,ContentDisposition,DispositionParam,Di
 use rocket::response::{Redirect,Responder,Stream};
 use rocket::request::{Form};
 use rocket_contrib::Template;
+use serde::ser::Serialize;
 use std::collections::HashMap;
 use std::sync::{Mutex};
 use std::borrow::{Cow};
 use uuid::{Uuid};
+
+#[derive(Serialize)]
+struct Context<T> {
+  user: User,
+  title: String,
+  data: T
+}
+
+impl<T> Context<T> {
+  pub fn new(user: User, title: String, data: T) -> Context<T>
+    where T: Serialize
+  {
+    Context {
+      user,
+      title,
+      data
+    }
+  }
+}
+
+type ContextNoData = Context<HashMap<String, String>>;
 
 #[derive(Debug)]
 pub struct AppState{
@@ -58,8 +80,7 @@ fn index(cookies: &Cookies, state: State<AppState>) -> Result<Template, Redirect
     return Err(Redirect::to("/login"));
   }
 
-  let mut context = HashMap::new();
-  context.insert("title", "Index");
+  let context: ContextNoData = Context::new(user.unwrap(), String::from("index"), HashMap::new());
 
   Ok(Template::render("index", &context))
 }
@@ -79,10 +100,14 @@ fn search(query: search::SearchQS, cookies: &Cookies, state: State<AppState>) ->
     return Err(Redirect::to("/login"));
   }
 
-  let search = search::Search::new(query.q, user.unwrap());
+  let user_u = user.unwrap();
+
+  let search = search::Search::new(query.q, user_u.clone());
   let results = search.query().expect("Query failed");
-  // TODO: handle query error and title
-  Ok(Template::render("search", &results))
+
+  let context: Context<search::SearchResults> = Context::new(user_u, String::from("search"), results);
+  // TODO: handle query error
+  Ok(Template::render("search", &context))
 }
 
 #[post("/login", data = "<login>")]
@@ -112,10 +137,12 @@ fn torrent(cookies: &Cookies, id: usize, state: State<AppState>) -> Result<Templ
     return Err(Redirect::to("/login"));
   }
 
-  let torrent = details::DetailedTorrent::get(id, user.unwrap()).expect("Detailed torrent failed");
+  let torrent = details::DetailedTorrent::get(id, user.clone().unwrap()).expect("Detailed torrent failed");
 
-  // TODO: handle query error and title
-  Ok(Template::render("torrent", &torrent))
+  let context: Context<details::DetailedTorrent> = Context::new(user.unwrap(), String::from("Torrent"), torrent);
+
+  // TODO: handle query error
+  Ok(Template::render("torrent", &context))
 }
 
 #[get("/download/<id>")]

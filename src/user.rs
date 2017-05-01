@@ -5,7 +5,7 @@ use uuid::{Uuid};
 
 pub type Users = Mutex<HashMap<Uuid, User>>;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct User{
   pub uuid: Uuid,
   pub token: T411Token
